@@ -1,0 +1,224 @@
+
+service: aws-application-example
+
+frameworkVersion: '3'
+
+package:
+  individually: true
+
+plugins:
+  - serverless-webpack
+
+provider:
+  stage: ${opt:stage, 'edtest'}
+  environment:
+    DYNAMODB_USERS_TABLE: ${self:service}-user-table-${self:provider.stage}
+    DYNAMODB_TOKENS_TABLE: ${self:service}-token-table-${self:provider.stage}
+    DYNAMODB_CARS_TABLE: ${self:service}-car-table-${self:provider.stage}
+    ACCESS_TOKEN_SECRET: 'ASF5af1651sfa68wq46f1'
+    REFRESH_TOKEN_SECRET: 'asf1a6f16w1f3a1s2fa1sf6'
+  name: aws
+  runtime: nodejs14.x
+  region: ${env:AWS_DEFAULT_REGION, 'eu-north-1'}
+  tracing:
+    apiGateway: true
+    lambda: true
+  tags:
+      STAGE: ${self:provider.stage}
+#      apiGateway:
+#        restApiId: !Ref EduardTestRestApi
+#        restApiRootResourceId: !GetAtt SoftSharkWebRestApi.RootResourceId
+  iam:
+      role:
+        statements:
+          - Effect: "Allow"
+            Action:
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - s3:*
+            Resource: "*"
+custom:
+    webpack:
+      includeModules:
+        forceExclude:
+          - aws-sdk
+#    developerStage: ${env:DEVELOPER_IDENTIFIER,'local'}
+    dynamoDB:
+      usernameGsi: username-gsi
+      deletionPolicy:
+        production: 'Retain'
+        staging: 'Retain'
+        default: 'Delete'
+
+resources:
+  Resources:
+    UsersDynamoTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_USERS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: 'id'
+            AttributeType: 'S'
+          - AttributeName: 'username'
+            AttributeType: 'S'
+        KeySchema:
+          - AttributeName: 'id'
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:custom.dynamoDB.usernameGsi}
+            KeySchema:
+              - AttributeName: 'username'
+                KeyType: HASH
+            Projection:
+              ProjectionType: 'ALL'
+        BillingMode: PAY_PER_REQUEST
+        Tags:
+          - Key: STAGE
+            Value: ${self:provider.stage}
+
+    TokensDynamoTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TOKENS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: 'userId'
+            AttributeType: 'S'
+          - AttributeName: 'tokenId'
+            AttributeType: 'S'
+        KeySchema:
+          - AttributeName: 'userId'
+            KeyType: HASH
+          - AttributeName: 'tokenId'
+            KeyType: RANGE
+        BillingMode: 'PAY_PER_REQUEST'
+        Tags:
+          - Key: STAGE
+            Value: ${self:provider.stage}
+
+    CarsDynamoTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_CARS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: 'userId'
+            AttributeType: 'S'
+          - AttributeName: 'carId'
+            AttributeType: 'S'
+        KeySchema:
+          - AttributeName: 'userId'
+            KeyType: HASH
+          - AttributeName: 'carId'
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        Tags:
+          - Key: STAGE
+            Value: ${self:provider.stage}
+
+
+functions:
+  #User Authentication
+  userRegistration:
+    handler: v1/lambdas/auth/userRegistration.handler
+    events:
+      - http:
+          path: /users/registration
+          method: post
+
+  userLogin:
+    handler: v1/lambdas/auth/userLogin.handler
+    events:
+      - http:
+          path: /users/login
+          method: post
+
+  userLogout:
+    handler: v1/lambdas/auth/userLogout.handler
+    events:
+      - http:
+          path: /users/{id}/logout
+          method: delete
+          authorizer: verification
+
+  userNewAccessToken:
+    handler: v1/lambdas/auth/userNewAccessToken.handler
+    events:
+      - http:
+          path: /users/{id}/refresh
+          method: get
+
+  verification:
+    handler: v1/lambdas/auth/verification.handler
+
+  #Users Data
+  usersAll:
+    handler: v1/lambdas/userData/usersAll.handler
+    events:
+      - http:
+          path: /users
+          method: get
+          authorizer: verification
+#            identitySource: method.request.header.Authorization
+
+  usersOne:
+      handler: v1/lambdas/userData/usersOne.handler
+      events:
+        - http:
+            path: /users/{id}
+            method: get
+            authorizer: verification
+
+  usersOneChange:
+      handler: v1/lambdas/userData/usersOneChange.handler
+      events:
+        - http:
+            path: /users/{id}
+            method: patch
+            authorizer: verification
+
+  usersOneDelete:
+      handler: v1/lambdas/userData/usersOneDelete.handler
+      events:
+        - http:
+            path: /users/{id}
+            method: delete
+            authorizer: verification
+
+  #Car Adding
+  userCarAdd:
+    handler: v1/lambdas/userCars/userCarAdd.handler
+    events:
+      - http:
+          path: /users/{id}/cars
+          method: post
+          authorizer: verification
+
+  userCarChange:
+    handler: v1/lambdas/userCars/userCarChange.handler
+    events:
+      - http:
+          path: /users/{id}/cars/{carId}
+          method: patch
+          authorizer: verification
+
+  userCarDelete:
+    handler: v1/lambdas/userCars/userCarDelete.handler
+    events:
+      - http:
+          path: /users/{id}/cars/{carId}
+          method: delete
+          authorizer: verification
+
+  userCars:
+    handler: v1/lambdas/userCars/userCars.handler
+    events:
+      - http:
+          path: /users/{id}/cars
+          method: get
+          authorizer: verification
