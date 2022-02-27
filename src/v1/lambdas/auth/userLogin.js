@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import {v4 as uuidv4} from 'uuid';
 import bcrypt from 'bcrypt';
 
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 const accessSecretKey = process.env.ACCESS_TOKEN_SECRET;
 const refreshSecretKey = process.env.REFRESH_TOKEN_SECRET;
@@ -75,7 +75,9 @@ export const handler =  async (event) => {
             Item: {...token},
         };
         const result =  await createItem(params);
-        result.Token = tokens.accessToken;
+        result.accessToken = tokens.accessToken;
+        result.refreshToken = tokens.refreshToken;
+        result.Item = Items.id;
         console.log(tokens);
         response = getSuccessResponse(result, 201);
         return response;

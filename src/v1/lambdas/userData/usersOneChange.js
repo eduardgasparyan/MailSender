@@ -1,6 +1,6 @@
 import {createItem, deleteItem, getItem, updateItem} from "../../modules/dynamoDB";
 const DYNAMODB_USERS_TABLE = process.env.DYNAMODB_USERS_TABLE;
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 async function updateProperties(data, Item) {
     for (let key in data) {

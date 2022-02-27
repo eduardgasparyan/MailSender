@@ -1,8 +1,8 @@
 import {createItem, getItem, queryItems,} from "../../modules/dynamoDB";
-import logger from '/logger';
+import logger from '/home/hp/aws-application-example/logger';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 const DYNAMODB_USERS_TABLE = process.env.DYNAMODB_USERS_TABLE;
 
 export const handler  = async (event) => {

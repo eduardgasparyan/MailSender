@@ -1,6 +1,6 @@
 const {queryItems, deleteItem} = require("../../modules/dynamoDB");
 const DYNAMODB_TOKENS_TABLE = process.env.DYNAMODB_TOKENS_TABLE;
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 export const handler  = async (event) => {
     const id = event.pathParameters.id;

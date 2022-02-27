@@ -1,5 +1,5 @@
 import {deleteItem, getItem} from "../../modules/dynamoDB";
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 export const handler = async (event) => {
     const DYNAMODB_USERS_TABLE = process.env.DYNAMODB_USERS_TABLE;

@@ -1,6 +1,6 @@
 import {getItem} from "../../modules/dynamoDB";
 const DYNAMODB_USERS_TABLE = process.env.DYNAMODB_USERS_TABLE;
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 
 export const handler = async (event) => {

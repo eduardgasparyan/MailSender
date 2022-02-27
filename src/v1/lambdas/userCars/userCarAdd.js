@@ -1,6 +1,6 @@
 import {createItem} from "../../modules/dynamoDB";
 import {v4 as uuidv4} from 'uuid';
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 const DYNAMODB_CARS_TABLE = process.env.DYNAMODB_CARS_TABLE;
 
 

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 const accessSecretKey = process.env.ACCESS_TOKEN_SECRET;
-const getPolicyDocument = require('/utils/getPolicyDocument');
+const getPolicyDocument = require('/src/utils/getPolicyDocument');
 
 export const handler =  async (event) => {
     let response;

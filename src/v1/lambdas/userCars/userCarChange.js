@@ -1,6 +1,6 @@
 import {createItem, deleteItem, getItem} from "../../modules/dynamoDB";
 const DYNAMODB_CARS_TABLE = process.env.DYNAMODB_CARS_TABLE;
-const getSuccessResponse = require('/utils/getSuccessResponse');
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 export const handler  = async (event) => {
     let carInDatabase = {};

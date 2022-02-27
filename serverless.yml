@@ -8,15 +8,16 @@ package:
 
 plugins:
   - serverless-webpack
-
+  - serverless-ngrok-tunnel
 provider:
   stage: ${opt:stage, 'edtest'}
   environment:
     DYNAMODB_USERS_TABLE: ${self:service}-user-table-${self:provider.stage}
     DYNAMODB_TOKENS_TABLE: ${self:service}-token-table-${self:provider.stage}
     DYNAMODB_CARS_TABLE: ${self:service}-car-table-${self:provider.stage}
-    ACCESS_TOKEN_SECRET: 'ASF5af1651sfa68wq46f1'
-    REFRESH_TOKEN_SECRET: 'asf1a6f16w1f3a1s2fa1sf6'
+    ACCESS_TOKEN_SECRET: ${ssm:/${self:provider.stage}/accessSecretKey};
+    REFRESH_TOKEN_SECRET: ${ssm:/${self:provider.stage}/refreshSecretKey};
+
   name: aws
   runtime: nodejs14.x
   region: ${env:AWS_DEFAULT_REGION, 'eu-north-1'}
@@ -40,8 +41,17 @@ provider:
               - dynamodb:UpdateItem
               - dynamodb:DeleteItem
               - s3:*
+              - ssm:GetParameters
             Resource: "*"
 custom:
+    ngrokTunnel:
+#      envPath: '../.env' # optional. Path to your .env file, relative to serverless.yml file
+      tunnels:
+        - port: 9000
+          ngrokOptions:
+            authtoken: '12345'
+            region: 'us'
+            subdomain: 'my-subdomain'
     webpack:
       includeModules:
         forceExclude:
@@ -56,6 +66,32 @@ custom:
 
 resources:
   Resources:
+    BasicParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: command
+        Type: String
+        Value: date
+        Description: SSM Parameter for running date command.
+        AllowedPattern: "^[a-zA-Z]{1,10}$"
+
+#    AdminDashboardUserPool:
+#      Type: AWS::Cognito::UserPool
+#      Properties:
+#        UserPoolName: softshark-admin-user-pool-${self:provider.stage}
+#        UsernameAttributes:
+#          - email
+#    AdminDashboardUserPoolClient:
+#        Type: AWS::Cognito::UserPoolClient
+#        Properties:
+#          ClientName: softshark-admin-user-pool-client-${self:provider.stage}
+#          UserPoolId: !Ref AdminDashboardUserPool
+#          ExplicitAuthFlows:
+#            - ALLOW_REFRESH_TOKEN_AUTH
+#            - ALLOW_USER_SRP_AUTH
+#          GenerateSecret: false
+
+
     UsersDynamoTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
@@ -123,23 +159,27 @@ resources:
 
 
 functions:
+
+  verification:
+    handler: src/v1/lambdas/auth/verification.handler
+
   #User Authentication
   userRegistration:
-    handler: v1/lambdas/auth/userRegistration.handler
+    handler: src/v1/lambdas/auth/userRegistration.handler
     events:
       - http:
           path: /users/registration
           method: post
 
   userLogin:
-    handler: v1/lambdas/auth/userLogin.handler
+    handler: src/v1/lambdas/auth/userLogin.handler
     events:
       - http:
           path: /users/login
           method: post
 
   userLogout:
-    handler: v1/lambdas/auth/userLogout.handler
+    handler: src/v1/lambdas/auth/userLogout.handler
     events:
       - http:
           path: /users/{id}/logout
@@ -147,18 +187,16 @@ functions:
           authorizer: verification
 
   userNewAccessToken:
-    handler: v1/lambdas/auth/userNewAccessToken.handler
+    handler: src/v1/lambdas/auth/userNewAccessToken.handler
     events:
       - http:
           path: /users/{id}/refresh
           method: get
 
-  verification:
-    handler: v1/lambdas/auth/verification.handler
 
   #Users Data
   usersAll:
-    handler: v1/lambdas/userData/usersAll.handler
+    handler: src/v1/lambdas/userData/usersAll.handler
     events:
       - http:
           path: /users
@@ -167,7 +205,7 @@ functions:
 #            identitySource: method.request.header.Authorization
 
   usersOne:
-      handler: v1/lambdas/userData/usersOne.handler
+      handler: src/v1/lambdas/userData/usersOne.handler
       events:
         - http:
             path: /users/{id}
@@ -175,7 +213,7 @@ functions:
             authorizer: verification
 
   usersOneChange:
-      handler: v1/lambdas/userData/usersOneChange.handler
+      handler: src/v1/lambdas/userData/usersOneChange.handler
       events:
         - http:
             path: /users/{id}
@@ -183,7 +221,7 @@ functions:
             authorizer: verification
 
   usersOneDelete:
-      handler: v1/lambdas/userData/usersOneDelete.handler
+      handler: src/v1/lambdas/userData/usersOneDelete.handler
       events:
         - http:
             path: /users/{id}
@@ -192,7 +230,7 @@ functions:
 
   #Car Adding
   userCarAdd:
-    handler: v1/lambdas/userCars/userCarAdd.handler
+    handler: src/v1/lambdas/userCars/userCarAdd.handler
     events:
       - http:
           path: /users/{id}/cars
@@ -200,7 +238,7 @@ functions:
           authorizer: verification
 
   userCarChange:
-    handler: v1/lambdas/userCars/userCarChange.handler
+    handler: src/v1/lambdas/userCars/userCarChange.handler
     events:
       - http:
           path: /users/{id}/cars/{carId}
@@ -208,7 +246,7 @@ functions:
           authorizer: verification
 
   userCarDelete:
-    handler: v1/lambdas/userCars/userCarDelete.handler
+    handler: src/v1/lambdas/userCars/userCarDelete.handler
     events:
       - http:
           path: /users/{id}/cars/{carId}
@@ -216,7 +254,7 @@ functions:
           authorizer: verification
 
   userCars:
-    handler: v1/lambdas/userCars/userCars.handler
+    handler: src/v1/lambdas/userCars/userCars.handler
     events:
       - http:
           path: /users/{id}/cars

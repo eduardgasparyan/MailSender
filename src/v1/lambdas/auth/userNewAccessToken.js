@@ -1,20 +1,18 @@
 const jwt = require('jsonwebtoken');
 const accessSecretKey = process.env.ACCESS_TOKEN_SECRET;
 const refreshSecretKey = process.env.REFRESH_TOKEN_SECRET;
-const getSuccessResponse = require('/utils/getSuccessResponse');
-const getSecrets = require('/utils/getSuccessResponse');
-
+const getSuccessResponse = require('/src/utils/getSuccessResponse');
 
 const generateAccessToken = async accessTokenData => {
     return jwt.sign({ accessTokenData }, accessSecretKey, { expiresIn: '30m' });
 };
 
 export const handler  = async (event) => {
-    const secrets = getSecrets(true);
-    console.log(secrets);
+    console.log(refreshSecretKey);
     console.log(event);
     let refreshToken = event.headers.Authorization.split(' ')[1];
     const id = event.pathParameters.id;
+    console.log(refreshToken, id);
     const decoded = await jwt.verify(refreshToken, refreshSecretKey);
     console.log(decoded);
     try {
