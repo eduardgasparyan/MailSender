@@ -1,5 +1,5 @@
 
-service: aws-application-example
+service: file-sender
 
 frameworkVersion: '3'
 
@@ -8,16 +8,10 @@ package:
 
 plugins:
   - serverless-webpack
-  - serverless-ngrok-tunnel
 provider:
-  stage: ${opt:stage, 'edtest'}
+  stage: ${opt:stage, 'file-sender'}
   environment:
-    DYNAMODB_USERS_TABLE: ${self:service}-user-table-${self:provider.stage}
-    DYNAMODB_TOKENS_TABLE: ${self:service}-token-table-${self:provider.stage}
-    DYNAMODB_CARS_TABLE: ${self:service}-car-table-${self:provider.stage}
-    ACCESS_TOKEN_SECRET: ${ssm:/${self:provider.stage}/accessSecretKey};
-    REFRESH_TOKEN_SECRET: ${ssm:/${self:provider.stage}/refreshSecretKey};
-
+    region: 'eu-north-1'
   name: aws
   runtime: nodejs14.x
   region: ${env:AWS_DEFAULT_REGION, 'eu-north-1'}
@@ -26,237 +20,35 @@ provider:
     lambda: true
   tags:
       STAGE: ${self:provider.stage}
-#      apiGateway:
-#        restApiId: !Ref EduardTestRestApi
-#        restApiRootResourceId: !GetAtt SoftSharkWebRestApi.RootResourceId
+
   iam:
       role:
         statements:
           - Effect: "Allow"
             Action:
-              - dynamodb:Query
-              - dynamodb:Scan
-              - dynamodb:GetItem
-              - dynamodb:PutItem
-              - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
-              - s3:*
-              - ssm:GetParameters
-            Resource: "*"
+            - ses:*
+            Resource: '*'
+
 custom:
-    ngrokTunnel:
-#      envPath: '../.env' # optional. Path to your .env file, relative to serverless.yml file
-      tunnels:
-        - port: 9000
-          ngrokOptions:
-            authtoken: '12345'
-            region: 'us'
-            subdomain: 'my-subdomain'
     webpack:
       includeModules:
         forceExclude:
           - aws-sdk
-#    developerStage: ${env:DEVELOPER_IDENTIFIER,'local'}
-    dynamoDB:
-      usernameGsi: username-gsi
-      deletionPolicy:
-        production: 'Retain'
-        staging: 'Retain'
-        default: 'Delete'
-
-resources:
-  Resources:
-    BasicParameter:
-      Type: AWS::SSM::Parameter
-      Properties:
-        Name: command
-        Type: String
-        Value: date
-        Description: SSM Parameter for running date command.
-        AllowedPattern: "^[a-zA-Z]{1,10}$"
-
-#    AdminDashboardUserPool:
-#      Type: AWS::Cognito::UserPool
-#      Properties:
-#        UserPoolName: softshark-admin-user-pool-${self:provider.stage}
-#        UsernameAttributes:
-#          - email
-#    AdminDashboardUserPoolClient:
-#        Type: AWS::Cognito::UserPoolClient
-#        Properties:
-#          ClientName: softshark-admin-user-pool-client-${self:provider.stage}
-#          UserPoolId: !Ref AdminDashboardUserPool
-#          ExplicitAuthFlows:
-#            - ALLOW_REFRESH_TOKEN_AUTH
-#            - ALLOW_USER_SRP_AUTH
-#          GenerateSecret: false
-
-
-    UsersDynamoTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_USERS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: 'id'
-            AttributeType: 'S'
-          - AttributeName: 'username'
-            AttributeType: 'S'
-        KeySchema:
-          - AttributeName: 'id'
-            KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: ${self:custom.dynamoDB.usernameGsi}
-            KeySchema:
-              - AttributeName: 'username'
-                KeyType: HASH
-            Projection:
-              ProjectionType: 'ALL'
-        BillingMode: PAY_PER_REQUEST
-        Tags:
-          - Key: STAGE
-            Value: ${self:provider.stage}
-
-    TokensDynamoTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_TOKENS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: 'userId'
-            AttributeType: 'S'
-          - AttributeName: 'tokenId'
-            AttributeType: 'S'
-        KeySchema:
-          - AttributeName: 'userId'
-            KeyType: HASH
-          - AttributeName: 'tokenId'
-            KeyType: RANGE
-        BillingMode: 'PAY_PER_REQUEST'
-        Tags:
-          - Key: STAGE
-            Value: ${self:provider.stage}
-
-    CarsDynamoTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: ${self:custom.dynamoDB.deletionPolicy.${self:provider.stage}, self:custom.dynamoDB.deletionPolicy.default}
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_CARS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: 'userId'
-            AttributeType: 'S'
-          - AttributeName: 'carId'
-            AttributeType: 'S'
-        KeySchema:
-          - AttributeName: 'userId'
-            KeyType: HASH
-          - AttributeName: 'carId'
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST
-        Tags:
-          - Key: STAGE
-            Value: ${self:provider.stage}
-
 
 functions:
 
-  verification:
-    handler: src/v1/lambdas/auth/verification.handler
-
-  #User Authentication
-  userRegistration:
-    handler: src/v1/lambdas/auth/userRegistration.handler
+  sendFile:
+    memorySize: 512
+    timeout: 5
+    handler: src/v1/lambdas/sendFile.handler
     events:
       - http:
-          path: /users/registration
+          path: send-email
           method: post
-
-  userLogin:
-    handler: src/v1/lambdas/auth/userLogin.handler
-    events:
-      - http:
-          path: /users/login
-          method: post
-
-  userLogout:
-    handler: src/v1/lambdas/auth/userLogout.handler
-    events:
-      - http:
-          path: /users/{id}/logout
-          method: delete
-          authorizer: verification
-
-  userNewAccessToken:
-    handler: src/v1/lambdas/auth/userNewAccessToken.handler
-    events:
-      - http:
-          path: /users/{id}/refresh
-          method: get
-
-
-  #Users Data
-  usersAll:
-    handler: src/v1/lambdas/userData/usersAll.handler
-    events:
-      - http:
-          path: /users
-          method: get
-          authorizer: verification
-#            identitySource: method.request.header.Authorization
-
-  usersOne:
-      handler: src/v1/lambdas/userData/usersOne.handler
-      events:
-        - http:
-            path: /users/{id}
-            method: get
-            authorizer: verification
-
-  usersOneChange:
-      handler: src/v1/lambdas/userData/usersOneChange.handler
-      events:
-        - http:
-            path: /users/{id}
-            method: patch
-            authorizer: verification
-
-  usersOneDelete:
-      handler: src/v1/lambdas/userData/usersOneDelete.handler
-      events:
-        - http:
-            path: /users/{id}
-            method: delete
-            authorizer: verification
-
-  #Car Adding
-  userCarAdd:
-    handler: src/v1/lambdas/userCars/userCarAdd.handler
-    events:
-      - http:
-          path: /users/{id}/cars
-          method: post
-          authorizer: verification
-
-  userCarChange:
-    handler: src/v1/lambdas/userCars/userCarChange.handler
-    events:
-      - http:
-          path: /users/{id}/cars/{carId}
-          method: patch
-          authorizer: verification
-
-  userCarDelete:
-    handler: src/v1/lambdas/userCars/userCarDelete.handler
-    events:
-      - http:
-          path: /users/{id}/cars/{carId}
-          method: delete
-          authorizer: verification
-
-  userCars:
-    handler: src/v1/lambdas/userCars/userCars.handler
-    events:
-      - http:
-          path: /users/{id}/cars
-          method: get
-          authorizer: verification
+          integration: lambda
+          cors: true
+          response:
+            headers:
+              Access-Control-Allow-Headers: "'*'"
+              Access-Control-Allow-Methods: "'*'"
+              Access-Control-Allow-Orogin: "'*'"
