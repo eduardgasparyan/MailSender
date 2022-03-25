@@ -28,32 +28,32 @@ export default class App extends React.Component {
       }
     } catch (e) { console.log(e); alert('File not found!') }
   }
-    send = () => {
-      const senderData = {
-        emailAddress: document.getElementById('email-address').value,
-        description: document.getElementById('description').value,
-        uploadedFiles: this.state.selectedFile,
-        uploadedFilename: this.state.selectedFilename,
-        uploadedFileSize: this.state.selectedFileSize,
-      };
-      if (senderData.emailAddress !== '' && senderData.description !== '' && senderData.uploadedFilename) {
-        if(senderData.uploadedFileSize < 10485760) {
-          try {
-            axios.post(
-                'https://1f08y75d3c.execute-api.eu-north-1.amazonaws.com/file-send/send-email', {...senderData})
-                .then((response) => { this.setState({response: response.status});
-                  console.log(this.state.response) });
-          } catch (e) {
-            console.log(e);
-          }
-          this.setState({ emailSent: true });
-        } else alert('Chosen file is more then 10MB');
-      } else alert('All fields are required!')
-    }
-    back = () => {
+  send = () => {
+    const senderData = {
+      emailAddress: document.getElementById('email-address').value,
+      description: document.getElementById('description').value,
+      uploadedFiles: this.state.selectedFile,
+      uploadedFilename: this.state.selectedFilename,
+      uploadedFileSize: this.state.selectedFileSize,
+    };
+    if (senderData.emailAddress !== '' && senderData.description !== '' && senderData.uploadedFilename) {
+      if(senderData.uploadedFileSize < 10485760) {
+        try {
+          axios.post(
+              'https://1f08y75d3c.execute-api.eu-north-1.amazonaws.com/file-send/send-email', {...senderData})
+              .then((response) => { this.setState({response: response.status});
+                console.log(this.state.response) });
+        } catch (e) {
+          console.log(e);
+        }
+        this.setState({ emailSent: true });
+      } else alert('Chosen file is more then 10MB');
+    } else alert('All fields are required!')
+  }
+  back = () => {
     this.setState({ emailSent: false });
-    }
-    renderNormal = () => {
+  }
+  renderNormal = () => {
     return (
         <div className="App">
           <header className="App-header">
@@ -73,19 +73,16 @@ export default class App extends React.Component {
             </form>
           </header>
         </div>
-    )
-    }
+    ) };
     renderSuccess = () => {
     return (
         <div className="App">
           <header className="App-header">
-            <p>Your email sent successfully</p>
+            <p>Your email was sent successfully</p>
             <input type='button' value="Back To Home" onClick={this.back}/>
           </header>
         </div>
-    )
-
-    }
+    ) };
   renderFalse = () => {
     return (
         <div className="App">
@@ -94,8 +91,7 @@ export default class App extends React.Component {
             <input type='button' value="Back To Home" onClick={this.back}/>
           </header>
         </div>
-    )
-  }
+    ) };
   renderSending = () => {
     return (
         <div className="App">
@@ -103,17 +99,15 @@ export default class App extends React.Component {
             <p>Sending...</p>
           </header>
         </div>
-    )
-  }
-    render()
-    {
-          if(!this.state.emailSent) {
-            return this.renderNormal();
-          }
-          else {
-            if (this.state.response === '') return this.renderSending();
-            else if (this.state.response === 200) return this.renderSuccess();
-            else return this.renderFalse();
-          }
+    ) };
+  render = () => {
+    if(!this.state.emailSent) {
+      return this.renderNormal();
+    }
+    else {
+      if (this.state.response === '') return this.renderSending();
+      else if (this.state.response === 200) return this.renderSuccess();
+      else return this.renderFalse();
+    }
   }
 }
