@@ -29,14 +29,15 @@ export default class App extends React.Component {
     } catch (e) { console.log(e); alert('File not found!') }
   }
     send = () => {
-      const emailAddress = document.getElementById('email-address').value;
-      const description = document.getElementById('description').value;
-      const uploadedFiles = this.state.selectedFile;
-      const uploadedFilename = this.state.selectedFilename;
-      const uploadedFileSize = this.state.selectedFileSize;
-      const senderData = { emailAddress, description, uploadedFiles, uploadedFilename };
-      if (emailAddress !== '' && description !== '' && uploadedFilename) {
-        if(uploadedFileSize < 10485760) {
+      const senderData = {
+        emailAddress: document.getElementById('email-address').value,
+        description: document.getElementById('description').value,
+        uploadedFiles: this.state.selectedFile,
+        uploadedFilename: this.state.selectedFilename,
+        uploadedFileSize: this.state.selectedFileSize,
+      };
+      if (senderData.emailAddress !== '' && senderData.description !== '' && senderData.uploadedFilename) {
+        if(senderData.uploadedFileSize < 10485760) {
           try {
             axios.post(
                 'https://1f08y75d3c.execute-api.eu-north-1.amazonaws.com/file-send/send-email', {...senderData})
