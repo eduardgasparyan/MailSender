@@ -49,14 +49,6 @@ export default class App extends React.Component {
         } else alert('Chosen file is more then 10MB');
       } else alert('All fields are required!')
     }
-    show = () => {
-      const emailAddress = document.getElementById('email-address').value;
-      const description = document.getElementById('description').value;
-      const uploadedFiles = this.state.selectedFile;
-      const uploadedFilename = this.state.selectedFilename;
-      const uploadedFileSize = this.state.selectedFileSize;
-      console.log(emailAddress, description, uploadedFilename, uploadedFileSize , uploadedFiles);
-    }
     back = () => {
     this.setState({ emailSent: false });
     }
@@ -65,7 +57,6 @@ export default class App extends React.Component {
         <div className="App">
           <header className="App-header">
             <p>Welcome to File Sender</p>
-            <input type='button' value="Console.log" onClick={this.show}/>
             <form>
               <div>
                 <input type="email" placeholder="Email address" id="email-address" required/>
