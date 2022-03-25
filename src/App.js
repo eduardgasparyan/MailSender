@@ -110,9 +110,9 @@ export default class App extends React.Component {
             return this.renderNormal();
           }
           else {
-            if (this.state.response !==400 && this.state.response !== 200) return this.renderSending();
-            else if(this.state.response === 400) return this.renderFalse() ;
+            if (this.state.response === '') return this.renderSending();
             else if (this.state.response === 200) return this.renderSuccess();
+            else return this.renderFalse();
           }
   }
 }
