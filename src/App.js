@@ -46,7 +46,7 @@ export default class App extends React.Component {
             console.log(e);
           }
           this.setState({ emailSent: true });
-        } else alert('Chosen file is too canr');
+        } else alert('Chosen file is more then 10MB');
       } else alert('All fields are required!')
     }
     show = () => {
