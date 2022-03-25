@@ -74,7 +74,7 @@ export default class App extends React.Component {
           </header>
         </div>
     ) };
-    renderSuccess = () => {
+  renderSuccess = () => {
     return (
         <div className="App">
           <header className="App-header">
