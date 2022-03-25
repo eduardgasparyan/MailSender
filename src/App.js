@@ -26,7 +26,7 @@ export default class App extends React.Component {
           selectedFileSize: files[0].size
         })
       }
-    } catch (e) { console.log(e); this.renderFalse() }
+    } catch (e) { console.log(e); alert('File not found!') }
   }
     send = () => {
       const emailAddress = document.getElementById('email-address').value;
